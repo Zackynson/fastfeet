@@ -6,6 +6,8 @@ import Recipient from '../models/Recipient';
 import User from '../models/User';
 import File from '../models/File';
 
+import Mail from '../../lib/Mail';
+
 class OrderController {
   async store(req, res) {
     const schema = Yup.object().shape({
@@ -29,21 +31,29 @@ class OrderController {
         .json({ error: 'only administrator can create orders' });
     }
 
-    const deliverymanExists = await Deliveryman.findByPk(
-      req.body.deliveryman_id
-    );
+    const deliveryman = await Deliveryman.findByPk(req.body.deliveryman_id, {
+      attributes: ['name', 'email'],
+    });
 
-    if (!deliverymanExists) {
+    if (!deliveryman) {
       return res.status(404).json({ error: 'deliveryman not found' });
     }
 
-    const recipientExists = await Recipient.findByPk(req.body.recipient_id);
+    const recipient = await Recipient.findByPk(req.body.recipient_id);
 
-    if (!recipientExists) {
+    if (!recipient) {
       return res.status(404).json({ error: 'recipient not found' });
     }
 
     const order = await Order.create(req.body);
+
+    await Mail.sendMail({
+      from: 'FastFeet Distribuidora <noreply@fastfeet.com',
+      to: `${deliveryman.name} <${deliveryman.email}>`,
+      subject: 'Nova encomenda',
+      text: 'Você tem uma nova encomenda disponível para a retirada',
+    });
+
     return res.json(order);
   }
 
