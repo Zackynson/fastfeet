@@ -11,7 +11,6 @@ class Deliveryman extends Model {
         sequelize,
       }
     );
-
     return this;
   }
 
